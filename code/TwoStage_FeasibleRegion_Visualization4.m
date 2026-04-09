@@ -1,0 +1,116 @@
+function [] = TwoStage_FeasibleRegion_Visualization4(P_input , P_compare1 , P_compare2 , P_compare3)
+    %% 绘图---compare1--compare2--compare3
+    disp('--- 两阶段灵活性可视化 4对比---');
+    
+    % --- 投影到 P_ch(1) vs P_ch(2) 平面 ---
+    dims_to_project = [1, 2];  % 对应 P_ch(t=1) 和 P_ch(t=2)
+    P_input_2d = P_input.projection(dims_to_project);
+    P_compare1_2d = P_compare1.projection(dims_to_project);
+    P_compare2_2d = P_compare2.projection(dims_to_project);
+    P_compare3_2d = P_compare3.projection(dims_to_project);
+    % --- 计算面积 ---
+    area_input = P_input_2d.volume;
+    area_compare1 = P_compare1_2d.volume;
+    area_compare2 = P_compare2_2d.volume;
+    area_compare3 = P_compare3_2d.volume;
+    % --- 打印结果 ---
+    fprintf('灵活性面积为: %.4f\n', area_input);
+    if area_compare1 > 1e-6
+        fprintf('聚合灵活性面积:       %.4f (占精确值的 %.2f%%)\n', area_input, (area_input/area_compare1)*100);
+    else
+        fprintf('精确面积出错，聚合灵活性面积:   %.4f\n', area_input);
+    end
+    fprintf('=============================\n');
+
+    % --- 使用顶点方法绘制轮廓线 ---
+    figure('Name', '聚合方法精度对比', 'Position', [100, 100, 900, 700]);
+    hold on;
+    % 定义颜色和线型
+    color_compare1 = [0, 0, 0];              % 黑色
+    color_input = [0, 0.45, 0.74];    % 蓝色
+    color_compare2 = [1, 0, 0];              % 红色
+    color_compare3 = [0.494, 0.184, 0.556];              % 紫色
+
+    line_width = 3;
+
+    % 获取顶点并绘制轮廓
+    legend_handles = [];
+    legend_str = {};
+
+    % 绘制对比1 (黑色实线)
+    if ~P_compare1_2d.isEmptySet
+        V_compare1 = P_compare1_2d.V;
+        if ~isempty(V_compare1) && size(V_compare1, 2) >= 2
+            k = convhull(V_compare1(:,1), V_compare1(:,2));
+            h1 = plot(V_compare1(k,1), V_compare1(k,2), '-', ...
+                'Color', color_compare1, 'LineWidth', line_width);
+            legend_handles = [legend_handles, h1];
+            legend_str{end+1} = sprintf('对比1 (面积=%.0f)', area_compare1);
+        end
+    end
+
+    % 绘制输入 (蓝色实线)
+    if ~P_input_2d.isEmptySet
+        V_compare2 = P_input_2d.V;
+        if ~isempty(V_compare2) && size(V_compare2, 2) >= 2
+            k = convhull(V_compare2(:,1), V_compare2(:,2));
+            h2 = plot(V_compare2(k,1), V_compare2(k,2), '-', ...
+                'Color', color_input, 'LineWidth', line_width);
+            legend_handles = [legend_handles, h2];
+            if area_input > 1e-6
+                legend_str{end+1} = sprintf('输入1灵活性 (面积=%.0f, %.1f%%)', area_input, (area_input/area_compare1)*100);
+            else
+                legend_str{end+1} = sprintf('出错');
+            end
+        end
+    end
+
+    % 绘制对比2 (红色实线)
+    if ~P_compare2_2d.isEmptySet
+        V_compare2 = P_compare2_2d.V;
+        if ~isempty(V_compare2) && size(V_compare2, 2) >= 2
+            k = convhull(V_compare2(:,1), V_compare2(:,2));
+            h2 = plot(V_compare2(k,1), V_compare2(k,2), '-', ...
+                'Color', color_compare2, 'LineWidth', line_width);
+            legend_handles = [legend_handles, h2];
+            if area_compare2 > 1e-6
+                legend_str{end+1} = sprintf('对比2灵活性 (面积=%.0f, %.1f%%)', area_compare2, (area_compare2/area_compare1)*100);
+            else
+                legend_str{end+1} = sprintf('出错');
+            end
+        end
+    end
+
+     % 绘制对比3 (紫色实线)
+    if ~P_compare3_2d.isEmptySet
+        V_compare3 = P_compare3_2d.V;
+        if ~isempty(V_compare3) && size(V_compare3, 2) >= 2
+            k = convhull(V_compare3(:,1), V_compare3(:,2));
+            h2 = plot(V_compare3(k,1), V_compare3(k,2), '-', ...
+                'Color', color_compare3, 'LineWidth', line_width);
+            legend_handles = [legend_handles, h2];
+            if area_compare3 > 1e-6
+                legend_str{end+1} = sprintf('对比3灵活性 (面积=%.0f, %.1f%%)', area_compare3, (area_compare3/area_compare1)*100);
+            else
+                legend_str{end+1} = sprintf('出错');
+            end
+        end
+    end
+
+    % 图表美化
+    title('内逼近聚合方法精度对比 (T=2)', 'FontSize', 16, 'FontWeight', 'bold');
+    xlabel('充电功率 P_ch(t=1) [kW]', 'FontSize', 14);
+    ylabel('充电功率 P_ch(t=2) [kW]', 'FontSize', 14);
+
+    % 添加图例
+    if ~isempty(legend_handles)
+        legend(legend_handles, legend_str, 'Location', 'northeast', 'FontSize', 12);
+    end
+
+    % 网格和坐标轴美化
+    grid off;
+    box on;
+    axis equal;
+    set(gca, 'FontSize', 12);
+    hold off;
+end
